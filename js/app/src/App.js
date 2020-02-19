@@ -11,6 +11,7 @@ function App() {
   // manage local state for setting params for en event
   const [type, setType] = useState('INCREMENT');
   const [value, setValue] = useState(0);
+  // const [refresh, setRefresh] = useState(0);
 
   // state for system value and refreshing that value
   const [systemValue, setSystemValue] = useState(0);
@@ -20,13 +21,16 @@ function App() {
   const [r, getEvents] = useState(0);
   const [events, setEvents] = useState([]);
 
-  useEffect(() => {
+  const getValue = () => {
+    console.log("getValue t:", t);
     const url = (t >= 0) ? `${baseURL}/value/${t}` : `${baseURL}/value`;
     fetch(url)
       .then(r => r.json())
-      .then(r => setSystemValue(r))
+      .then(r => {console.log('r', r); setSystemValue(r);})
       .catch(e => console.error(e))
-  }, [t])
+  }
+
+  useEffect(getValue, [t])
 
   useEffect(() => {
     fetch(`${baseURL}/events`)
@@ -40,6 +44,7 @@ function App() {
     if (value <= 0) {
       return
     }
+
     const url = `${baseURL}/event`
     const body = {type, value}
 
@@ -49,7 +54,9 @@ function App() {
     })
     .then(res => res.json())
     .then(res => console.log(res))
+    .then(x => getValue())
     .catch(e => console.error(e));
+
   }
 
   //TODO add some paging mechanism for events

@@ -20,6 +20,7 @@ var (
 const (
 	Increment = "INCREMENT"
 	Decrement = "DECREMENT"
+	Multiply  = "MULTIPLY"
 	BaseURL   = "http://localhost"
 	Port      = "8080"
 )
@@ -82,14 +83,16 @@ func valueAt(w http.ResponseWriter, r *http.Request) {
 func value(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	v := calcSystemValue(-1)
-	w.Header().Set("Content-Type", "application/json")
 	js, _ := json.Marshal(v)
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(js)
 }
 
 func all(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	mu.Lock()
 	js, _ := json.Marshal(allEvents)
+	mu.Unlock()
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(js)
 }
@@ -103,7 +106,7 @@ func increment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if e.Type != Increment && e.Type != Decrement {
+	if e.Type != Increment && e.Type != Decrement && e.Type != Multiply {
 		http.Error(w, fmt.Sprintf("unexpected type [%s] encountered", e.Type), http.StatusBadRequest)
 		return
 	}
@@ -119,9 +122,10 @@ func increment(w http.ResponseWriter, r *http.Request) {
 
 func calcSystemValue(endVal int) int {
 	v := 0
+	mu.Lock()
 	events := allEvents
+	mu.Unlock()
 	if endVal >= 0 {
-		println("\n Updating all events \n")
 		events = events[:endVal]
 	}
 	fmt.Printf("allEvents %#+v", allEvents)
@@ -130,6 +134,8 @@ func calcSystemValue(endVal int) int {
 			v += e.Value
 		} else if e.Type == Decrement {
 			v -= e.Value
+		} else if e.Type == Multiply {
+			v *= e.Value
 		} else {
 			fmt.Printf("unexpected type [%s] encountered", e.Type)
 		}
